@@ -13,8 +13,8 @@ from playwright.sync_api import sync_playwright, TimeoutError, Error as Playwrig
 
 DB_CONFIG = {
     "host": "localhost",
-    "user": "biranchi",
-    "password": "biranchi",
+    "user": "your_username",
+    "password": "your_password",
     "database": "student_db",
 }
 

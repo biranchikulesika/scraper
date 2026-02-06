@@ -1,118 +1,140 @@
-# SAMS Odisha Student Data Scraper
+# SAMS Odisha HSS Data Scraper
 
-This script scrapes student data from the SAMS Odisha HSS (Higher Secondary School) website and stores it in a MySQL database.
+A robust, two-stage automated scraping system designed to extract Higher Secondary School (HSS) and student information from the SAMS Odisha portal. The system uses Playwright for browser automation and stores data in a structured MySQL database.
 
-## Prerequisites
+## 📌 Project Overview
 
-- Python 3.7+
-- A running MySQL server
+The scraping process is divided into two mandatory phases:
+1.  **Institute Scraping (`creaper.py`):** Collects a master list of all colleges, SAMS codes, and CHSE codes across Odisha.
+2.  **Student Scraping (`scraper.py`):** Performs a deep-dive scrape of student details (Registration No, Roll No, etc.) based on the institutes discovered in phase one.
 
-## Setup
+---
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/biranchikulesika/scraper.git
-    cd scraper
-    ```
+## 🛠️ Prerequisites
 
-2.  **Install Python dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+* **Python:** Version 3.7 or higher.
+* **MySQL Server:** A running instance (local or remote).
+* **Browsers:** Playwright requires specific browser binaries.
 
-3.  **Install Playwright browsers:**
-    The scraper uses Playwright to control a web browser. You need to install the necessary browser binaries:
-    ```bash
-    playwright install
-    ```
+---
 
-4.  **Configure Database Connection:**
-    Update the `DB_CONFIG` dictionary in `scraper.py` with your MySQL database credentials.
+## ⚙️ Installation & Setup
 
-    ```python
-    DB_CONFIG = {
-        "host": "your-mysql-host",
-        "user": "your-mysql-user",
-        "password": "your-mysql-password",
-        "database": "your-mysql-database",
-    }
-    ```
+### 1. Clone and Install
+```bash
+# Clone the repository
+git clone https://github.com/biranchikulesika/scraper.git
 
-5.  **Database Schema:**
-    The script assumes a table named `students` and `institutes`. You will need to create these tables in your database.
+# Install Python dependencies
+pip install -r requirements.txt
 
-    **`institutes` table:** This table should be pre-populated with the college names, SAMS codes, and a unique `institute_id`by running by running `python creaper.py`. The scraper uses this to look up and associate students with the correct institute.
-    ```sql
-    CREATE TABLE institutes (
-        institute_id INT AUTO_INCREMENT PRIMARY KEY,
-        sams_code VARCHAR   (50) UNIQUE,
-        chse_code VARCHAR(50) UNIQUE,
-        district_name VARCHAR(255),
-        block_ulb VARCHAR(255),
-        college_name VARCHAR(512) );
-    ```
+# Install Playwright browser binaries
+playwright install
 
-    **`students` table:** This is where the scraped student data is stored.
-    ```sql
-    CREATE TABLE students_test (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        reg_no VARCHAR(255),
-        exam_roll_no VARCHAR(255),
-        student_name VARCHAR(255),
-        father_name VARCHAR(255),
-        mother_name VARCHAR(255),
-        gender VARCHAR(50),
-        stream VARCHAR(100),
-        year VARCHAR(50),
-        district VARCHAR(100),
-        college VARCHAR(255),
-        institute_id INT,
-        sams_code VARCHAR(255),
-        updated_at DATETIME,
-        UNIQUE KEY unique_student (year, institute_id, reg_no, exam_roll_no),
-        FOREIGN KEY (institute_id) REFERENCES institutes(institute_id)
-    );
-    ```
+```
 
-## Usage
+### 2. Database Configuration
 
-You can run the scraper from the command line, providing arguments to specify which data to scrape.
+You must update the database credentials in **both** `creaper.py` and `scraper.py`. Open the files and locate the `DB_CONFIG` dictionary:
 
-### Arguments
+```python
+DB_CONFIG = {
+    "host": "localhost",
+    "user": "your_username",
+    "password": "your_password",
+    "database": "student_db",
+}
 
--   `year`: (Required) The academic year to scrape.
--   `district`: (Optional) A specific district to scrape. If omitted, all districts are scraped.
--   `college`: (Optional) A specific college to scrape. Requires `district` to be specified. If omitted, all colleges in the district are scraped.
--   `stream`: (Optional) A specific stream (e.g., "Arts", "Science"). Requires `college` to be specified. If omitted, all streams in the college are scraped.
--   `--verbose`: (Optional) Show more detailed logs during execution.
--   `--show-browser`: (Optional) Run the browser in non-headless mode, so you can see the automation.
+```
 
-### Examples
+### 3. Initialize Database Schema
 
--   **Scrape all data for a specific year:**
-    ```bash
-    python scraper.py 2023
-    ```
+Run the provided `schema.sql` in your MySQL environment to create the database, user, and necessary table structures (`institutes` and `students`).
 
--   **Scrape all data for a specific district in a year:**
-    ```bash
-    python scraper.py 2023 Khurda
-    ```
+---
 
--   **Scrape a specific college:**
-    ```bash
-    python scraper.py 2023 Khurda "Buxi Jagabandhu Bidyadhar Higher Secondary School, Bhubaneswar"
-    ```
+## 🚀 Usage Guide
 
--   **Scrape a specific stream in a college:**
-    ```bash
-    python scraper.py 2023 Khurda "Buxi Jagabandhu Bidyadhar Higher Secondary School, Bhubaneswar" Science
-    ```
+### Step 1: Populate Institutes (Mandatory First Step)
 
-## Logging
+Before scraping student data, you must build the institute reference table. `scraper.py` relies on this table to resolve `institute_id` foreign keys.
 
-The scraper creates a `logs` directory to store information about the scraping process:
+Run the "Creaper":
 
--   `db_errors.log`: Logs any errors that occur during database operations (e.g., connection errors, commit failures).
--   `failed_rows.log`: Logs student data rows that failed to be inserted into the database. This is useful for debugging.
--   `college_name_mismatch.log`: Logs cases where the college name from the website doesn't exactly match a name in your `institutes` table, but a match was found through normalization (e.g., ignoring case and special characters). It also logs when no match can be found.
+```bash
+python creaper.py
+
+```
+
+* **What it does:** Iterates through all districts from 2016 to 2026 and saves every unique college into the `institutes` table.
+* **Wait time:** This can take a while as it navigates the entire state directory.
+
+---
+
+### Step 2: Scrape Student Data
+
+Once the `institutes` table is populated, use `scraper.py` to get student details.
+
+#### Command Syntax:
+
+```bash
+python scraper.py [year] [district] [college] [stream] [--show-browser]
+
+```
+
+#### Argument Details:
+
+| Argument | Description | Example |
+| --- | --- | --- |
+| `year` | **Required.** Single year, comma-separated list, or range (`..`). | `2024` or `2022,2023` or `2020..2024` |
+| `district` | **Optional.** Filter by a specific district name. | `Khurda` |
+| `college` | **Optional.** Filter by a specific college name (requires District). | `"BJB Higher Secondary School"` |
+| `stream` | **Optional.** Filter by "Arts", "Science", "Commerce", etc. | `Science` |
+| `--show-browser` | **Optional.** Runs the scraper with a visible browser window. | `--show-browser` |
+
+#### Practical Examples:
+
+```bash
+# Scrape all students in Odisha for the year 2024
+python scraper.py 2024
+
+# Scrape a range of years for a specific district
+python scraper.py 2022..2024 Koraput
+
+# Scrape a specific stream in one college
+python scraper.py 2024 Khurda "Buxi Jagabandhu Bidyadhar Higher Secondary School" Science
+
+```
+
+---
+
+### Step 3: Bulk Execution (Bash Script)
+
+If you want to automate multiple years or districts in a loop, use the provided shell script:
+
+1. Edit `students_scraper_shell_script.sh` to set your `DISTRICT` and `YEAR` range.
+2. Run:
+```bash
+chmod +x students_scraper_shell_script.sh
+./students_scraper_shell_script.sh
+
+```
+
+
+
+---
+
+## 📂 Logging & Troubleshooting
+
+Check the `logs/` directory for detailed execution reports:
+
+* **`db_errors.log`**: Issues with MySQL connection or query execution.
+* **`failed_rows.log`**: Student records that couldn't be saved (contains raw data for manual retry).
+* **`college_name_mismatch.log`**: Critical log showing if a college name on the website didn't match the `institutes` table.
+* **`institute_errors.log`**: Errors specifically generated during the `creaper.py` run.
+
+### Common Errors:
+
+* **TimeoutError:** The SAMS website is slow. The script has built-in retries, but check your internet connection.
+* **Database Mismatch:** If `scraper.py` says "Institute not found," ensure you ran `creaper.py` successfully first.
+* **District or College** are spelt different in some cases. Please refer to [SAMS Odisha Portal](https://hss.samsodisha.gov.in/newHSS/ReportCollegeWiseStudentDetails_Approved.aspx?MYx4BuYeE1G1NjtO83XBep3DRVEn1aNZYsg5QGBtTGc=) for the exact spelling. Or you can run the `creaper`, it will gather all the districts names along with college names. Which you then can use as parameters in `scraper.py`.

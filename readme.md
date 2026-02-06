@@ -52,7 +52,7 @@ This script scrapes student data from the SAMS Odisha HSS (Higher Secondary Scho
         college_name VARCHAR(512) );
     ```
 
-    **`students_test` table:** This is where the scraped student data is stored.
+    **`students` table:** This is where the scraped student data is stored.
     ```sql
     CREATE TABLE students_test (
         id INT AUTO_INCREMENT PRIMARY KEY,

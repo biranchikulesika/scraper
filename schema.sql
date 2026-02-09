@@ -32,7 +32,7 @@ FLUSH PRIVILEGES;
 -- Table: institutes
 -- =====================================
 
-CREATE TABLE `institutes` (
+CREATE TABLE IF NOT EXISTS `institutes` (
   `institute_id` int NOT NULL AUTO_INCREMENT,
   `sams_code` varchar(50) DEFAULT NULL,
   `chse_code` varchar(50) DEFAULT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE `institutes` (
 -- Table: students
 -- =====================================
 
-CREATE TABLE `students` (
+CREATE TABLE IF NOT EXISTS `students` (
   `reg_no` varchar(255) NOT NULL,
   `exam_roll_no` varchar(255) NOT NULL,
   `student_name` varchar(255) DEFAULT NULL,
